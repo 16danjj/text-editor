@@ -1,23 +1,22 @@
-use crossterm::{event::Event::*, terminal};
+use crossterm::terminal;
 use std::io;
+mod editor;
+use editor::*;
 
 
-mod keyboard;
-mod output;
-use output::*;
 
-mod input;
-use input::*;
 
 fn main() -> io::Result<()> {
     terminal::enable_raw_mode()?;
+    let mut editor = Editor::new()?;
+
     loop {
-        if editor_refresh_screen().is_err()
+        if editor.refresh_screen().is_err()
         {
-            die("unable to refresh screen");
+            editor.die("unable to refresh screen");
         }
 
-        if editor_process_keypress(){
+        if editor.process_keypress(){
             break;
         }  
     }
