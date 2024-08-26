@@ -41,7 +41,6 @@ impl Editor {
         }
 
         Ok(())
-
     }
 
     pub fn clear_screen(&self, stdout : &mut Stdout)  -> io::Result<()>{
