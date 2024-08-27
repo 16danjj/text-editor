@@ -41,7 +41,9 @@ impl Editor {
             {
                 self.die("unable to refresh screen");
             }
-    
+            
+            self.screen.flush_op()?;
+            
             if self.process_keypress(){
                 break;
             }  
@@ -56,7 +58,7 @@ impl Editor {
 
         self.screen.clear()?;  
         self.screen.draw_rows()?;
-        self.screen.move_cursor_flush()
+        self.screen.move_cursor()
         
     }
 
