@@ -1,28 +1,28 @@
-use crossterm::event::{read, KeyEvent, KeyModifiers, KeyCode, KeyEventKind, KeyEventState, Event::*};
-use std::io::{self, Stdout, Write};
-use crossterm::{cursor, style::Print, terminal, QueueableCommand};
+use crossterm::event::{KeyEvent, KeyModifiers, KeyCode, KeyEventKind, KeyEventState};
+use std::io::{self};
+use crossterm::terminal;
 use errno::errno;
 
+use crate::keyboard::*;
+use crate::screen::*;
 
 pub struct Editor {
-    width : u16,
-    height : u16
+    screen : Screen,
+    keyboard : Keyboard
 }
 
 impl Editor {
-    pub fn new() -> io::Result<Self> {
-        let (columns, rows) = crossterm::terminal::size()?;
-        
-        Ok(Self{
-            width : columns,
-            height : rows
+
+    pub fn new() -> io::Result<Self>{
+        Ok(Self {
+            screen : Screen::new()?,
+            keyboard : Keyboard {}
         })
     }
 
-
     pub fn process_keypress(&self) -> bool {
         
-        if let Ok(c) = self.read_key() {
+        if let Ok(c) = self.keyboard.read() {
             match c {
                 KeyEvent { code: KeyCode::Char('q'), modifiers: KeyModifiers::CONTROL, kind: KeyEventKind::Press, state: KeyEventState::NONE } => return true,
                 _ => {return false}
@@ -32,55 +32,39 @@ impl Editor {
         false
     }
 
-    pub fn draw_rows(&self, stdout : &mut Stdout) -> io::Result<()>{
-        
-        for row in 0..self.height {
-            stdout
-            .queue(cursor::MoveTo(0,row))?
-            .queue(Print("~".to_string()))?;
+    pub fn start(&mut self) -> io::Result<()> {
+
+        terminal::enable_raw_mode()?;
+
+        loop {
+            if self.refresh_screen().is_err()
+            {
+                self.die("unable to refresh screen");
+            }
+    
+            if self.process_keypress(){
+                break;
+            }  
         }
+    
+        terminal::disable_raw_mode()?; 
 
         Ok(())
     }
 
-    pub fn clear_screen(&self, stdout : &mut Stdout)  -> io::Result<()>{
+    pub fn refresh_screen(&mut self) -> io::Result<()>{
 
-        stdout
-        .queue(terminal::Clear(terminal::ClearType::All))?
-        .queue(cursor::MoveTo(0,0))?
-        .flush()
-    
-    }
-
-    pub fn refresh_screen(&self) -> io::Result<()>{
-        let mut stdout = io::stdout();
-
-        self.clear_screen(&mut stdout)?;
-        self.draw_rows(&mut stdout)?;
+        self.screen.clear()?;  
+        self.screen.draw_rows()?;
+        self.screen.move_cursor_flush()
         
-        stdout.queue(cursor::MoveTo(0,0))?.flush()
-
     }
 
-    pub fn die<S : Into<String>>(&self, message : S){
-        let mut stdout = io::stdout();
-        let _ = self.clear_screen(&mut stdout);
+    pub fn die<S : Into<String>>(&mut self, message : S){
+        let _ = self.screen.clear();
         let _ = terminal::disable_raw_mode();
         eprintln!("{}:{}", message.into(), errno());
         std::process::exit(1);
-    }
-
-    pub fn read_key(&self)->Result<KeyEvent, String>{
-        loop{
-            if let Ok(event) = read(){
-                if let Key(key_event) = event {
-                   return Ok(key_event)
-                } 
-            } else{
-                self.die("read failed"); 
-                return Err(String::from("Read failed"))
-            }
-        }
     }
 
 }
