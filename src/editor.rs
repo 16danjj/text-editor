@@ -6,9 +6,16 @@ use errno::errno;
 use crate::keyboard::*;
 use crate::screen::*;
 
+#[derive(Default)]
+pub struct Position {
+    pub x : u16,
+    pub y : u16
+}
+
 pub struct Editor {
     screen : Screen,
-    keyboard : Keyboard
+    keyboard : Keyboard,
+    cursor : Position
 }
 
 impl Editor {
@@ -16,20 +23,21 @@ impl Editor {
     pub fn new() -> io::Result<Self>{
         Ok(Self {
             screen : Screen::new()?,
-            keyboard : Keyboard {}
+            keyboard : Keyboard {},
+            cursor : Position::default()
         })
     }
 
-    pub fn process_keypress(&self) -> bool {
+    pub fn process_keypress(&mut self) -> io::Result<bool> {
         
         if let Ok(c) = self.keyboard.read() {
             match c {
-                KeyEvent { code: KeyCode::Char('q'), modifiers: KeyModifiers::CONTROL, kind: KeyEventKind::Press, state: KeyEventState::NONE } => return true,
-                _ => {return false}
+                KeyEvent { code: KeyCode::Char('q'), modifiers: KeyModifiers::CONTROL, kind: KeyEventKind::Press, state: KeyEventState::NONE } => return Ok(true),
+                _ => {return Ok(false)}
             }
         }
 
-        false
+        Ok(false)
     }
 
     pub fn start(&mut self) -> io::Result<()> {
@@ -41,10 +49,12 @@ impl Editor {
             {
                 self.die("unable to refresh screen");
             }
+
+            self.screen.move_to(&self.cursor)?;
             
             self.screen.flush_op()?;
             
-            if self.process_keypress(){
+            if self.process_keypress()?{
                 break;
             }  
         }
@@ -57,9 +67,7 @@ impl Editor {
     pub fn refresh_screen(&mut self) -> io::Result<()>{
 
         self.screen.clear()?;  
-        self.screen.draw_rows()?;
-        self.screen.move_cursor()
-        
+        self.screen.draw_rows()
     }
 
     pub fn die<S : Into<String>>(&mut self, message : S){
