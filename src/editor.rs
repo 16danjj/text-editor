@@ -33,7 +33,24 @@ impl Editor {
         if let Ok(c) = self.keyboard.read() {
             match c {
                 KeyEvent { code: KeyCode::Char('q'), modifiers: KeyModifiers::CONTROL, kind: KeyEventKind::Press, state: KeyEventState::NONE } => return Ok(true),
-                _ => {return Ok(false)}
+                _ => {
+                    match c.code{
+                        KeyCode::Char('w')  => {
+                            self.move_cursor('w');
+                        }
+                        KeyCode::Char('a')  => {
+                            self.move_cursor('a');
+                        }
+                        KeyCode::Char('s')  => {
+                            self.move_cursor('s');
+                        }
+                        KeyCode::Char('d')  => {
+                            self.move_cursor('d');
+                        }
+    
+                        _ => {return Ok(false)}
+                    }
+                },
             }
         }
 
@@ -75,6 +92,16 @@ impl Editor {
         let _ = terminal::disable_raw_mode();
         eprintln!("{}:{}", message.into(), errno());
         std::process::exit(1);
+    }
+
+    fn move_cursor(&mut self, key:char) {
+        match key {
+            'a' => {self.cursor.x = self.cursor.x.saturating_sub(1);},
+            'd' => {self.cursor.x +=1;},
+            'w' => {self.cursor.y = self.cursor.y.saturating_sub(1);},
+            's' => {self.cursor.y +=1;},
+            _ => {}
+        }
     }
 
 }
