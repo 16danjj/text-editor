@@ -2,9 +2,17 @@ use crossterm::event::{KeyEvent, KeyModifiers, KeyCode, KeyEventKind, KeyEventSt
 use std::io::{self};
 use crossterm::terminal;
 use errno::errno;
-
+use std::collections::HashMap;
 use crate::keyboard::*;
 use crate::screen::*;
+
+#[derive(Clone, Copy)]
+enum EditorKey{
+    ArrowUp,
+    ArrowDown,
+    ArrowLeft,
+    ArrowRight
+}
 
 #[derive(Default)]
 pub struct Position {
@@ -15,16 +23,23 @@ pub struct Position {
 pub struct Editor {
     screen : Screen,
     keyboard : Keyboard,
-    cursor : Position
+    cursor : Position,
+    keymap : HashMap<char, EditorKey>
 }
 
 impl Editor {
 
     pub fn new() -> io::Result<Self>{
+        let mut key_map = HashMap::new();
+        key_map.insert('w', EditorKey::ArrowUp);
+        key_map.insert('a', EditorKey::ArrowLeft);
+        key_map.insert('s', EditorKey::ArrowDown);
+        key_map.insert('d', EditorKey::ArrowRight);
         Ok(Self {
             screen : Screen::new()?,
             keyboard : Keyboard {},
-            cursor : Position::default()
+            cursor : Position::default(),
+            keymap : key_map
         })
     }
 
@@ -33,16 +48,18 @@ impl Editor {
         if let Ok(c) = self.keyboard.read() {
             match c {
                 KeyEvent { code: KeyCode::Char('q'), modifiers: KeyModifiers::CONTROL, kind: KeyEventKind::Press, state: KeyEventState::NONE } => return Ok(true),
-                KeyEvent {code : KeyCode::Up, ..} => {self.move_cursor('w');},
-                KeyEvent {code : KeyCode::Down, ..} => {self.move_cursor('s');},
-                KeyEvent {code : KeyCode::Left, ..} => {self.move_cursor('a');},
-                KeyEvent {code : KeyCode::Right, ..} => {self.move_cursor('d');},
+                KeyEvent {code : KeyCode::Up, ..} => {self.move_cursor(EditorKey::ArrowUp);},
+                KeyEvent {code : KeyCode::Down, ..} => {self.move_cursor(EditorKey::ArrowDown);},
+                KeyEvent {code : KeyCode::Left, ..} => {self.move_cursor(EditorKey::ArrowLeft);},
+                KeyEvent {code : KeyCode::Right, ..} => {self.move_cursor(EditorKey::ArrowRight);},
                 KeyEvent {code : KeyCode::Char(key), ..} => {
                     match key {
-                        'w' | 'a' | 's' | 'd' => {self.move_cursor(key);},
+                        'w' | 'a' | 's' | 'd' => {self.move_cursor(self.keymap.get(&key).copied().unwrap());},
                         _ => {}
                     }
-                }, 
+                },  
+                
+
                 _ => {return Ok(false)}
             }
         }
@@ -87,12 +104,12 @@ impl Editor {
         std::process::exit(1);
     }
 
-    fn move_cursor(&mut self, key:char) {
+    fn move_cursor(&mut self, key:EditorKey) {
         match key {
-            'a' => {self.cursor.x = self.cursor.x.saturating_sub(1);},
-            'd' => {self.cursor.x +=1;},
-            'w' => {self.cursor.y = self.cursor.y.saturating_sub(1);},
-            's' => {self.cursor.y +=1;},
+            EditorKey::ArrowLeft => {self.cursor.x = self.cursor.x.saturating_sub(1);},
+            EditorKey::ArrowRight => {self.cursor.x +=1;},
+            EditorKey::ArrowUp => {self.cursor.y = self.cursor.y.saturating_sub(1);},
+            EditorKey::ArrowDown => {self.cursor.y +=1;},
             _ => {}
         }
     }
