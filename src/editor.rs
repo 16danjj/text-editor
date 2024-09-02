@@ -33,24 +33,17 @@ impl Editor {
         if let Ok(c) = self.keyboard.read() {
             match c {
                 KeyEvent { code: KeyCode::Char('q'), modifiers: KeyModifiers::CONTROL, kind: KeyEventKind::Press, state: KeyEventState::NONE } => return Ok(true),
-                _ => {
-                    match c.code{
-                        KeyCode::Char('w')  => {
-                            self.move_cursor('w');
-                        }
-                        KeyCode::Char('a')  => {
-                            self.move_cursor('a');
-                        }
-                        KeyCode::Char('s')  => {
-                            self.move_cursor('s');
-                        }
-                        KeyCode::Char('d')  => {
-                            self.move_cursor('d');
-                        }
-    
-                        _ => {return Ok(false)}
+                KeyEvent {code : KeyCode::Up, ..} => {self.move_cursor('w');},
+                KeyEvent {code : KeyCode::Down, ..} => {self.move_cursor('s');},
+                KeyEvent {code : KeyCode::Left, ..} => {self.move_cursor('a');},
+                KeyEvent {code : KeyCode::Right, ..} => {self.move_cursor('d');},
+                KeyEvent {code : KeyCode::Char(key), ..} => {
+                    match key {
+                        'w' | 'a' | 's' | 'd' => {self.move_cursor(key);},
+                        _ => {}
                     }
-                },
+                }, 
+                _ => {return Ok(false)}
             }
         }
 
