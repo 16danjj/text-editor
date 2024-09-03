@@ -11,7 +11,7 @@ enum EditorKey{
     ArrowUp,
     ArrowDown,
     ArrowLeft,
-    ArrowRight
+    ArrowRight,
 }
 
 #[derive(Default)]
@@ -52,6 +52,27 @@ impl Editor {
                 KeyEvent {code : KeyCode::Down, ..} => {self.move_cursor(EditorKey::ArrowDown);},
                 KeyEvent {code : KeyCode::Left, ..} => {self.move_cursor(EditorKey::ArrowLeft);},
                 KeyEvent {code : KeyCode::Right, ..} => {self.move_cursor(EditorKey::ArrowRight);},
+                KeyEvent {code : KeyCode::PageUp, ..} | KeyEvent {code : KeyCode::PageDown, ..} => 
+                {
+                    let bounds = self.screen.bounds();
+                    for _ in 0..bounds.y{
+                        if c.code == KeyCode::PageUp{
+                            self.move_cursor(EditorKey::ArrowUp);
+                        }
+                        else {
+                            self.move_cursor(EditorKey::ArrowDown);
+                        }
+                    }
+                },
+                KeyEvent {code : KeyCode::Home, ..} => {
+                    self.cursor.x  = 0;
+                    self.screen.move_to_beginning(&self.cursor)?;
+                },
+                KeyEvent {code : KeyCode::End, ..} => {
+                    let bounds = self.screen.bounds();
+                    self.cursor.x = bounds.x;
+                    self.screen.move_to_end(&self.cursor)?;
+                },
                 KeyEvent {code : KeyCode::Char(key), ..} => {
                     match key {
                         'w' | 'a' | 's' | 'd' => {self.move_cursor(self.keymap.get(&key).copied().unwrap());},
@@ -105,11 +126,14 @@ impl Editor {
     }
 
     fn move_cursor(&mut self, key:EditorKey) {
+
+        let bounds = self.screen.bounds();
+
         match key {
             EditorKey::ArrowLeft => {self.cursor.x = self.cursor.x.saturating_sub(1);},
-            EditorKey::ArrowRight => {self.cursor.x +=1;},
+            EditorKey::ArrowRight if self.cursor.x < bounds.x => {self.cursor.x +=1;},
             EditorKey::ArrowUp => {self.cursor.y = self.cursor.y.saturating_sub(1);},
-            EditorKey::ArrowDown => {self.cursor.y +=1;},
+            EditorKey::ArrowDown if self.cursor.y < bounds.y => {self.cursor.y +=1;},
             _ => {}
         }
     }

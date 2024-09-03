@@ -62,7 +62,7 @@ impl Screen{
 
         Ok(())
     } 
-    
+
     pub fn flush_op(&mut self) -> io::Result<()> {
         self.stdout.flush()
     }
@@ -72,6 +72,25 @@ impl Screen{
     }
 
     pub fn move_to(&mut self, pos: &Position) -> io::Result<()> {
+        self.stdout.queue(cursor::MoveTo(pos.x, pos.y))?;
+
+        Ok(())
+    }
+
+    pub fn bounds(&self) -> Position {
+        Position{
+            x: self.width,
+            y: self.height
+        }
+    }
+
+    pub fn move_to_beginning(&mut self, pos: &Position) -> io::Result<()> {
+        self.stdout.queue(cursor::MoveTo(pos.x, pos.y))?;
+
+        Ok(())
+    }
+
+    pub fn move_to_end(&mut self, pos: &Position) -> io::Result<()> {
         self.stdout.queue(cursor::MoveTo(pos.x, pos.y))?;
 
         Ok(())
