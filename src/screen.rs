@@ -20,35 +20,47 @@ impl Screen{
         })
     }
 
-    pub fn draw_rows(&mut self) -> io::Result<()>{
+    pub fn draw_rows(&mut self, rows: &[String] ) -> io::Result<()>{
         
         const VERSION:&str = env!("CARGO_PKG_VERSION");
 
         for row in 0..self.height {
-            if row == self.height / 3 {
-                let mut welcome = format!("Text editor --version {VERSION}");
-                welcome.truncate(self.width as usize);
+            if row >= rows.len() as u16{
+                if row == self.height / 3 {
+                    let mut welcome = format!("Text editor --version {VERSION}");
+                    welcome.truncate(self.width as usize);
 
-                if welcome.len() < self.width.into() {
-                    let leftmost = ((self.width as usize - welcome.len()) / 2) as u16;
+                    if welcome.len() < self.width.into() {
+                        let leftmost = ((self.width as usize - welcome.len()) / 2) as u16;
+                        
+                        self.stdout.queue(cursor::MoveTo(0,row))?
+                                    .queue(Print("~".to_string()))?
+                                    .queue(cursor::MoveTo(leftmost, row))?
+                                    .queue(Print(welcome))?;
+                    }  
+                    else {
+                        self.stdout.queue(cursor::MoveTo(0,row))?
+                                    .queue(Print(welcome))?;
+                    }
                     
-                    self.stdout.queue(cursor::MoveTo(0,row))?
-                                .queue(Print("~".to_string()))?
-                                .queue(cursor::MoveTo(leftmost, row))?
-                                .queue(Print(welcome))?;
-                }  
-                else {
-                    self.stdout.queue(cursor::MoveTo(0,row))?
-                                .queue(Print(welcome))?;
                 }
-                
+
+                else {
+                    self.stdout
+                    .queue(cursor::MoveTo(0,row))?
+                    .queue(Print("~".to_string()))?;
+                }
+
             }
 
             else {
-                self.stdout
-                .queue(cursor::MoveTo(0,row))?
-                .queue(Print("~".to_string()))?;
+                let len = rows[row as usize].len().min(self.width as usize);
+
+                self.stdout.queue(cursor::MoveTo(1,row))?
+                .queue(Print(rows[row as usize][0..len].to_string()))?;
+
             }
+
         }
 
         Ok(())

@@ -24,7 +24,8 @@ pub struct Editor {
     screen : Screen,
     keyboard : Keyboard,
     cursor : Position,
-    keymap : HashMap<char, EditorKey>
+    keymap : HashMap<char, EditorKey>,
+    rows : Vec<String>
 }
 
 impl Editor {
@@ -39,7 +40,8 @@ impl Editor {
             screen : Screen::new()?,
             keyboard : Keyboard {},
             cursor : Position::default(),
-            keymap : key_map
+            keymap : key_map,
+            rows : vec!["Hello World!".to_string()]
         })
     }
 
@@ -115,7 +117,7 @@ impl Editor {
     pub fn refresh_screen(&mut self) -> io::Result<()>{
 
         self.screen.clear()?;  
-        self.screen.draw_rows()
+        self.screen.draw_rows(&self.rows)
     }
 
     pub fn die<S : Into<String>>(&mut self, message : S){
@@ -138,3 +140,4 @@ impl Editor {
         }
     }
 }
+
