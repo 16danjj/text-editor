@@ -7,7 +7,7 @@ mod screen;
 
 fn main() -> io::Result<()> {
     
-    let mut editor = Editor::new()?;
+    let mut editor = Editor::new("C:\\Users\\jose\\Desktop\\input.txt")?;
 
     editor.start()?;
 

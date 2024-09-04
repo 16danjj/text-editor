@@ -3,6 +3,7 @@ use std::io::{self};
 use crossterm::terminal;
 use errno::errno;
 use std::collections::HashMap;
+use std::path::Path;
 use crate::keyboard::*;
 use crate::screen::*;
 
@@ -30,7 +31,14 @@ pub struct Editor {
 
 impl Editor {
 
-    pub fn new() -> io::Result<Self>{
+    pub fn new<P: AsRef<Path>>(filename: P) -> io::Result<Self>{
+
+        let first_line = std::fs::read_to_string(filename)
+        .expect("Unable to open file")
+        .split("/n")
+        .next()
+        .unwrap().to_string();
+    
         let mut key_map = HashMap::new();
         key_map.insert('w', EditorKey::ArrowUp);
         key_map.insert('a', EditorKey::ArrowLeft);
@@ -41,7 +49,7 @@ impl Editor {
             keyboard : Keyboard {},
             cursor : Position::default(),
             keymap : key_map,
-            rows : vec!["Hello World!".to_string()]
+            rows : vec![first_line]
         })
     }
 
