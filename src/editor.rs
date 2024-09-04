@@ -33,21 +33,20 @@ impl Editor {
 
     pub fn with_file<P: AsRef<Path>>(filename: P) -> io::Result<Self>{
 
-        let first_line = std::fs::read_to_string(filename)
+        let lines = std::fs::read_to_string(filename)
         .expect("Unable to open file")
-        .split("/n")
-        .next()
-        .unwrap().to_string();
-        
-        Editor::build(first_line.as_str())
+        .split('\n')
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>();
+
+        Editor::build(&lines)
     }
 
     pub fn new() -> io::Result<Self> {
-        Editor::build("")
+        Editor::build(&[])
     }
 
-    fn build<T>(data:T) -> io::Result<Self>
-    where T: Copy + Into<String>,
+    fn build(data: &[String]) -> io::Result<Self>
     {
         let mut key_map = HashMap::new();
         key_map.insert('w', EditorKey::ArrowUp);
@@ -59,7 +58,7 @@ impl Editor {
             keyboard : Keyboard {},
             cursor : Position::default(),
             keymap : key_map,
-            rows : if data.into().is_empty() {Vec::new()} else {vec![data.into()]}  
+            rows : if data.is_empty() {Vec::new()} else {Vec::from(data)}  
         })
     }
     

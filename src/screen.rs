@@ -26,11 +26,11 @@ impl Screen{
 
         for row in 0..self.height {
             if row >= rows.len() as u16{
-                if row == self.height / 3 && rows.len() ==0 {
+                if row == self.height / 3 && rows.is_empty() {
                     let mut welcome = format!("Text editor --version {VERSION}");
                     welcome.truncate(self.width as usize);
 
-                    if welcome.len() < self.width.into() {
+                    if welcome.len() < self.width as usize {
                         let leftmost = ((self.width as usize - welcome.len()) / 2) as u16;
                         
                         self.stdout.queue(cursor::MoveTo(0,row))?
@@ -54,9 +54,10 @@ impl Screen{
             }
 
             else {
+                
                 let len = rows[row as usize].len().min(self.width as usize);
 
-                self.stdout.queue(cursor::MoveTo(1,row))?
+                self.stdout.queue(cursor::MoveTo(0,row))?
                 .queue(Print(rows[row as usize][0..len].to_string()))?;
 
             }
