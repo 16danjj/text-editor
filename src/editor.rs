@@ -39,15 +39,16 @@ impl Editor {
         .next()
         .unwrap().to_string();
         
-        Editor::build(first_line)
+        Editor::build(first_line.as_str())
     }
 
     pub fn new() -> io::Result<Self> {
         Editor::build("")
     }
 
-    fn build<T:Into<String>>(data:T) -> io::Result<Self>{
-
+    fn build<T>(data:T) -> io::Result<Self>
+    where T: Copy + Into<String>,
+    {
         let mut key_map = HashMap::new();
         key_map.insert('w', EditorKey::ArrowUp);
         key_map.insert('a', EditorKey::ArrowLeft);
@@ -58,7 +59,7 @@ impl Editor {
             keyboard : Keyboard {},
             cursor : Position::default(),
             keymap : key_map,
-            rows : vec![data.into()]
+            rows : if data.into().is_empty() {Vec::new()} else {vec![data.into()]}  
         })
     }
     

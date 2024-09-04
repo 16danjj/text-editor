@@ -26,7 +26,7 @@ impl Screen{
 
         for row in 0..self.height {
             if row >= rows.len() as u16{
-                if row == self.height / 3 {
+                if row == self.height / 3 && rows.len() ==0 {
                     let mut welcome = format!("Text editor --version {VERSION}");
                     welcome.truncate(self.width as usize);
 
