@@ -31,14 +31,23 @@ pub struct Editor {
 
 impl Editor {
 
-    pub fn new<P: AsRef<Path>>(filename: P) -> io::Result<Self>{
+    pub fn with_file<P: AsRef<Path>>(filename: P) -> io::Result<Self>{
 
         let first_line = std::fs::read_to_string(filename)
         .expect("Unable to open file")
         .split("/n")
         .next()
         .unwrap().to_string();
-    
+        
+        Editor::build(first_line)
+    }
+
+    pub fn new() -> io::Result<Self> {
+        Editor::build("")
+    }
+
+    fn build<T:Into<String>>(data:T) -> io::Result<Self>{
+
         let mut key_map = HashMap::new();
         key_map.insert('w', EditorKey::ArrowUp);
         key_map.insert('a', EditorKey::ArrowLeft);
@@ -49,9 +58,11 @@ impl Editor {
             keyboard : Keyboard {},
             cursor : Position::default(),
             keymap : key_map,
-            rows : vec![first_line]
+            rows : vec![data.into()]
         })
     }
+    
+    
 
     pub fn process_keypress(&mut self) -> io::Result<bool> {
         
