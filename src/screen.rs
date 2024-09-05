@@ -20,12 +20,13 @@ impl Screen{
         })
     }
 
-    pub fn draw_rows(&mut self, rows: &[String] ) -> io::Result<()>{
+    pub fn draw_rows(&mut self, rows: &[String], rowoff: u16 ) -> io::Result<()>{
         
         const VERSION:&str = env!("CARGO_PKG_VERSION");
 
         for row in 0..self.height {
-            if row >= rows.len() as u16{
+            let filerow = (row + rowoff) as usize;
+            if filerow >= rows.len(){
                 if row == self.height / 3 && rows.is_empty() {
                     let mut welcome = format!("Text editor --version {VERSION}");
                     welcome.truncate(self.width as usize);
@@ -55,10 +56,10 @@ impl Screen{
 
             else {
                 
-                let len = rows[row as usize].len().min(self.width as usize);
+                let len = rows[filerow].len().min(self.width as usize);
 
                 self.stdout.queue(cursor::MoveTo(0,row))?
-                .queue(Print(rows[row as usize][0..len].to_string()))?;
+                .queue(Print(rows[filerow][0..len].to_string()))?;
 
             }
 
@@ -84,8 +85,8 @@ impl Screen{
         cursor::position()
     }
 
-    pub fn move_to(&mut self, pos: &Position) -> io::Result<()> {
-        self.stdout.queue(cursor::MoveTo(pos.x, pos.y))?;
+    pub fn move_to(&mut self, pos: &Position, rowoff: u16 ) -> io::Result<()> {
+        self.stdout.queue(cursor::MoveTo(pos.x, pos.y - rowoff))?;
 
         Ok(())
     }

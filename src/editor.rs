@@ -26,7 +26,8 @@ pub struct Editor {
     keyboard : Keyboard,
     cursor : Position,
     keymap : HashMap<char, EditorKey>,
-    rows : Vec<String>
+    rows : Vec<String>,
+    rowoff : u16
 }
 
 impl Editor {
@@ -58,7 +59,8 @@ impl Editor {
             keyboard : Keyboard {},
             cursor : Position::default(),
             keymap : key_map,
-            rows : if data.is_empty() {Vec::new()} else {Vec::from(data)}  
+            rows : if data.is_empty() {Vec::new()} else {Vec::from(data)}  ,
+            rowoff : 0
         })
     }
     
@@ -119,11 +121,12 @@ impl Editor {
                 self.die("unable to refresh screen");
             }
 
-            self.screen.move_to(&self.cursor)?;
+            self.screen.move_to(&self.cursor, self.rowoff)?;
             
             self.screen.flush_op()?;
             
             if self.process_keypress()?{
+                self.screen.clear()?;
                 break;
             }  
         }
@@ -134,9 +137,9 @@ impl Editor {
     }
 
     pub fn refresh_screen(&mut self) -> io::Result<()>{
-
+        self.scroll();
         self.screen.clear()?;  
-        self.screen.draw_rows(&self.rows)
+        self.screen.draw_rows(&self.rows, self.rowoff)
     }
 
     pub fn die<S : Into<String>>(&mut self, message : S){
@@ -152,11 +155,25 @@ impl Editor {
 
         match key {
             EditorKey::ArrowLeft => {self.cursor.x = self.cursor.x.saturating_sub(1);},
-            EditorKey::ArrowRight if self.cursor.x < bounds.x => {self.cursor.x +=1;},
+            EditorKey::ArrowRight if self.cursor.x < bounds.x => self.cursor.x += 1,
             EditorKey::ArrowUp => {self.cursor.y = self.cursor.y.saturating_sub(1);},
-            EditorKey::ArrowDown if self.cursor.y < bounds.y => {self.cursor.y +=1;},
+            EditorKey::ArrowDown if self.cursor.y < self.rows.len() as u16 => self.cursor.y += 1,
             _ => {}
         }
     }
+
+    fn scroll(&mut self){
+        let bounds = self.screen.bounds();
+
+        if self.cursor.y< self.rowoff {
+            self.rowoff = self.cursor.y;
+        }
+
+        if self.cursor.y >= self.rowoff + bounds.y{
+            self.rowoff = self.cursor.y - bounds.y + 1;
+        }
+    }
+
+
 }
 
