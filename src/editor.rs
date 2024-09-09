@@ -27,7 +27,8 @@ pub struct Editor {
     cursor : Position,
     keymap : HashMap<char, EditorKey>,
     rows : Vec<String>,
-    rowoff : u16
+    rowoff : u16,
+    coloff : u16
 }
 
 impl Editor {
@@ -60,7 +61,8 @@ impl Editor {
             cursor : Position::default(),
             keymap : key_map,
             rows : if data.is_empty() {Vec::new()} else {Vec::from(data)}  ,
-            rowoff : 0
+            rowoff : 0, 
+            coloff : 0
         })
     }
     
@@ -121,7 +123,7 @@ impl Editor {
                 self.die("unable to refresh screen");
             }
 
-            self.screen.move_to(&self.cursor, self.rowoff)?;
+            self.screen.move_to(&self.cursor, self.rowoff, self.coloff)?;
             
             self.screen.flush_op()?;
             
@@ -139,7 +141,7 @@ impl Editor {
     pub fn refresh_screen(&mut self) -> io::Result<()>{
         self.scroll();
         self.screen.clear()?;  
-        self.screen.draw_rows(&self.rows, self.rowoff)
+        self.screen.draw_rows(&self.rows, self.rowoff, self.coloff)
     }
 
     pub fn die<S : Into<String>>(&mut self, message : S){
@@ -151,11 +153,9 @@ impl Editor {
 
     fn move_cursor(&mut self, key:EditorKey) {
 
-        let bounds = self.screen.bounds();
-
         match key {
             EditorKey::ArrowLeft => {self.cursor.x = self.cursor.x.saturating_sub(1);},
-            EditorKey::ArrowRight if self.cursor.x < bounds.x => self.cursor.x += 1,
+            EditorKey::ArrowRight => self.cursor.x += 1,
             EditorKey::ArrowUp => {self.cursor.y = self.cursor.y.saturating_sub(1);},
             EditorKey::ArrowDown if self.cursor.y < self.rows.len() as u16 => self.cursor.y += 1,
             _ => {}
@@ -165,12 +165,20 @@ impl Editor {
     fn scroll(&mut self){
         let bounds = self.screen.bounds();
 
-        if self.cursor.y< self.rowoff {
+        if self.cursor.y < self.rowoff {
             self.rowoff = self.cursor.y;
         }
 
         if self.cursor.y >= self.rowoff + bounds.y{
             self.rowoff = self.cursor.y - bounds.y + 1;
+        }
+
+        if self.cursor.x < self.coloff {
+            self.coloff = self.cursor.x;
+        }
+
+        if self.cursor.x >= self.coloff + bounds.x {
+            self.coloff = self.cursor.x - bounds.x + 1;
         }
     }
 
