@@ -173,6 +173,22 @@ impl Editor {
             EditorKey::ArrowDown if self.cursor.y < self.rows.len() as u16 => self.cursor.y += 1,
             _ => {}
         }
+
+        let row_idx = if self.cursor.y as usize >= self.rows.len(){
+            None
+        }
+        else {
+            Some(self.cursor.y as usize)
+        };
+
+        let row_len = if let Some(idx) = row_idx{
+            self.rows[idx].len()
+        }
+        else {0} as u16;
+
+        if self.cursor.x > row_len {
+            self.cursor.x = row_len;
+        }
     }
 
     fn scroll(&mut self){
