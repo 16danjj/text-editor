@@ -56,11 +56,13 @@ impl Screen{
 
             else {
                 
-                let len = rows[filerow].len();
+                let mut len = rows[filerow].len();
 
                 if len < coloff as usize{ 
                     continue;
                 } 
+
+                len -= coloff as usize;
 
                 let start = coloff as usize;
                 let end = start + if len >= self.width as usize
