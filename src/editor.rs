@@ -172,6 +172,11 @@ impl Editor {
                     if self.cursor.x < (self.rows[idx].len() as u16){
                         self.cursor.x += 1;
                     }
+                    else if self.cursor.x == self.rows[idx].len() as u16 && self.cursor.y < self.rows.len() as u16{
+                        self.cursor.y += 1;
+                        self.cursor.x = 0;
+                    }
+
                 }
             },
             EditorKey::ArrowUp => {self.cursor.y = self.cursor.y.saturating_sub(1);},
