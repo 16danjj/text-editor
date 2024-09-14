@@ -4,6 +4,7 @@ use editor::*;
 
 mod keyboard;
 mod screen;
+mod row;
 
 fn main() -> io::Result<()> {
 

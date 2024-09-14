@@ -1,63 +1,13 @@
 use std::{env, io::{self, stdout, Stdout, Write}};
-use crossterm::{cursor::{self, position}, style::Print, terminal, QueueableCommand};
+use crossterm::{cursor::{self, position, MoveTo}, style::{self, Color::{Black, White}, Colors, Print, ResetColor, SetColors}, terminal, QueueableCommand};
 
 use crate::Position;
-const TAB_STOP: usize = 8;
+use crate::row::*;
 
 pub struct Screen {
     stdout : Stdout,
     width : u16,
     height : u16
-}
-
-pub struct Row {
-    chars : String,
-    render : String,
-}
-
-impl Row {
-    pub fn new(chars: String) -> Self {
-        let mut render = String::new();
-        let mut idx = 0;
-        for c in chars.chars(){
-            match c {
-                '\t' => {render.push(' ');
-                idx += 1;
-                while idx % TAB_STOP != 0 {
-                    render.push(' ');
-                    idx += 1;
-                }}
-                _ => {render.push(c);
-                     idx += 1;}
-            }
-        }
-        Self {
-            chars,
-            render 
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        self.chars.len()
-    }
-
-    pub fn render_len(&self) -> usize {
-        self.render.len()
-    }
-
-    pub fn cx_to_rx(&self, cx: u16) -> u16{
-        let mut rx = 0;
-        for c in self.chars.chars().take(cx as usize) {
-            if c == '\t' {
-                rx += (TAB_STOP - 1) - (rx % TAB_STOP);
-            }
-            rx += 1;
-
-        }
-        rx as u16
-    }
-
-
 }
 
 impl Screen{
@@ -67,7 +17,7 @@ impl Screen{
         Ok(Self{
             stdout : stdout(),
             width : columns,
-            height : rows
+            height : rows - 1
         })
     }
 
@@ -161,6 +111,39 @@ impl Screen{
             x: self.width,
             y: self.height
         }
+    }
+
+    pub fn draw_status_bar<T:Into<String>>(&mut self, left: T, right: T) -> io::Result<()>{
+        let left = left.into();
+        let right = right.into();
+
+        let left_width = left.len();
+        let right_width = right.len();
+        let screen_width = self.width as usize;
+
+        let status = format!("{left:0$}", left_width.min(screen_width));
+        let mut rstatus = String::new();
+        if status.len() < screen_width - right_width {
+            let mut len = status.len();
+            while len < screen_width {
+                if screen_width - len == right_width{
+                    rstatus.push_str(right.as_str());
+                    break;
+                }
+                else {
+                    rstatus.push(' ');
+                    len+=1;
+                }
+            }
+        }
+
+        self.stdout
+            .queue(cursor::MoveTo(0, self.height))?
+            .queue(SetColors(Colors::new(Black, White)))?
+            .queue(Print(format!("{status}{rstatus}")))?
+            .queue(ResetColor)?;
+
+        Ok(())
     }
 
 }
