@@ -2,11 +2,62 @@ use std::{env, io::{self, stdout, Stdout, Write}};
 use crossterm::{cursor::{self, position}, style::Print, terminal, QueueableCommand};
 
 use crate::Position;
+const TAB_STOP: usize = 8;
 
 pub struct Screen {
     stdout : Stdout,
     width : u16,
     height : u16
+}
+
+pub struct Row {
+    chars : String,
+    render : String,
+}
+
+impl Row {
+    pub fn new(row: String) -> Self {
+        let mut render = String::new();
+        let mut idx = 0;
+        for c in row.chars(){
+            match c {
+                '\t' => {render.push(' ');
+                idx += 1;
+                while idx % TAB_STOP != 0 {
+                    render.push(' ');
+                    idx += 1;
+                }}
+                _ => {render.push(c);
+                     idx += 1;}
+            }
+        }
+        Self {
+            chars : row.clone(),
+            render 
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.chars.len()
+    }
+
+    pub fn render_len(&self) -> usize {
+        self.render.len()
+    }
+
+    pub fn cx_to_rx(&self, cx: u16) -> u16{
+        let mut rx = 0;
+        for c in self.chars.chars().take(cx as usize) {
+            if c == '\t' {
+                rx += (TAB_STOP - 1) - (rx % TAB_STOP);
+            }
+            rx += 1;
+
+        }
+        rx as u16
+    }
+
+
 }
 
 impl Screen{
@@ -20,7 +71,7 @@ impl Screen{
         })
     }
 
-    pub fn draw_rows(&mut self, rows: &[String], rowoff: u16, coloff: u16) -> io::Result<()>{
+    pub fn draw_rows(&mut self, rows: &[Row], rowoff: u16, coloff: u16) -> io::Result<()>{
         
         const VERSION:&str = env!("CARGO_PKG_VERSION");
 
@@ -56,7 +107,7 @@ impl Screen{
 
             else {
                 
-                let mut len = rows[filerow].len();
+                let mut len = rows[filerow].render_len();
 
                 if len < coloff as usize{ 
                     continue;
@@ -73,7 +124,7 @@ impl Screen{
                 };
 
                 self.stdout.queue(cursor::MoveTo(0,row))?
-                .queue(Print(rows[filerow][start..end].to_string()))?;
+                .queue(Print(rows[filerow].render[start..end].to_string()))?;
 
             }
 
@@ -99,8 +150,8 @@ impl Screen{
         cursor::position()
     }
 
-    pub fn move_to(&mut self, pos: &Position, rowoff: u16, coloff: u16 ) -> io::Result<()> {
-        self.stdout.queue(cursor::MoveTo(pos.x - coloff, pos.y - rowoff))?;
+    pub fn move_to(&mut self, pos: &Position, render_x: u16, rowoff: u16, coloff: u16 ) -> io::Result<()> {
+        self.stdout.queue(cursor::MoveTo(render_x - coloff, pos.y - rowoff))?;
 
         Ok(())
     }

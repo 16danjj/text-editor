@@ -25,8 +25,9 @@ pub struct Editor {
     screen : Screen,
     keyboard : Keyboard,
     cursor : Position,
+    render_x : u16, 
     keymap : HashMap<char, EditorKey>,
-    rows : Vec<String>,
+    rows : Vec<Row>,
     rowoff : u16,
     coloff : u16
 }
@@ -59,8 +60,18 @@ impl Editor {
             screen : Screen::new()?,
             keyboard : Keyboard {},
             cursor : Position::default(),
+            render_x : 0,
             keymap : key_map,
-            rows : if data.is_empty() {Vec::new()} else {Vec::from(data)}  ,
+            rows : if data.is_empty() {
+                Vec::new()
+            } else {
+                let v = Vec::from(data);
+                let mut rows = Vec::new();
+                for row in v {
+                    rows.push(Row::new(row))
+                }
+                rows
+            },
             rowoff : 0, 
             coloff : 0
         })
@@ -123,7 +134,7 @@ impl Editor {
                 self.die("unable to refresh screen");
             }
 
-            self.screen.move_to(&self.cursor, self.rowoff, self.coloff)?;
+            self.screen.move_to(&self.cursor, self.render_x, self.rowoff, self.coloff)?;
             
             self.screen.flush_op()?;
             
@@ -203,6 +214,12 @@ impl Editor {
 
     fn scroll(&mut self){
         let bounds = self.screen.bounds();
+        self.render_x = if self.cursor.y < self.rows.len() as u16 {
+            self.rows[self.cursor.y as usize].cx_to_rx(self.cursor.x) 
+        }
+        else {
+            0
+        };
 
         if self.cursor.y < self.rowoff {
             self.rowoff = self.cursor.y;
@@ -212,12 +229,12 @@ impl Editor {
             self.rowoff = self.cursor.y - bounds.y + 1;
         }
 
-        if self.cursor.x < self.coloff {
-            self.coloff = self.cursor.x;
+        if self.render_x < self.coloff {
+            self.coloff = self.render_x;
         }
 
-        if self.cursor.x >= self.coloff + bounds.x {
-            self.coloff = self.cursor.x - bounds.x + 1;
+        if self.render_x >= self.coloff + bounds.x {
+            self.coloff = self.render_x - bounds.x + 1;
         }
     }
 
