@@ -91,6 +91,15 @@ impl Editor {
                 KeyEvent {code : KeyCode::PageUp, ..} | KeyEvent {code : KeyCode::PageDown, ..} => 
                 {
                     let bounds = self.screen.bounds();
+                    match c.code {
+                        KeyCode::PageUp => {
+                            self.cursor.y = self.rowoff
+                        }
+                        KeyCode::PageDown => {
+                            self.cursor.y = (self.rowoff + bounds.y - 1).min(self.rows.len() as u16)
+                        }
+                        _ => panic!("rust compiler broke"),
+                    }
                     for _ in 0..bounds.y{
                         if c.code == KeyCode::PageUp{
                             self.move_cursor(EditorKey::ArrowUp);
