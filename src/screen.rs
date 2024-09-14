@@ -16,10 +16,10 @@ pub struct Row {
 }
 
 impl Row {
-    pub fn new(row: String) -> Self {
+    pub fn new(chars: String) -> Self {
         let mut render = String::new();
         let mut idx = 0;
-        for c in row.chars(){
+        for c in chars.chars(){
             match c {
                 '\t' => {render.push(' ');
                 idx += 1;
@@ -32,7 +32,7 @@ impl Row {
             }
         }
         Self {
-            chars : row.clone(),
+            chars,
             render 
         }
     }
