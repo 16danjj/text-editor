@@ -1,5 +1,6 @@
 use crossterm::event::{KeyEvent, KeyModifiers, KeyCode, KeyEventKind, KeyEventState};
 use std::io::{self};
+use std::time::{Instant,Duration};
 use crossterm::terminal;
 use errno::errno;
 use std::collections::HashMap;
@@ -24,6 +25,8 @@ pub struct Position {
 
 pub struct Editor {
     filename : String,
+    status_msg : String, 
+    status_time : Instant,
     screen : Screen,
     keyboard : Keyboard,
     cursor : Position,
@@ -60,6 +63,8 @@ impl Editor {
         key_map.insert('d', EditorKey::ArrowRight);
         Ok(Self {
             filename: filename.into(),
+            status_msg : String::from("HELP: Ctrl -Q = quit"),
+            status_time : Instant::now(),
             screen : Screen::new()?,
             keyboard : Keyboard {},
             cursor : Position::default(),
@@ -164,8 +169,14 @@ impl Editor {
         self.scroll();
         self.screen.clear()?;  
         self.screen.draw_rows(&self.rows, self.rowoff, self.coloff)?;
+        if !self.status_msg.is_empty(){
+            if self.status_time.elapsed() > Duration::from_secs(5) {
+                self.status_msg.clear();
+            }
+        }
         self.screen.draw_status_bar(format!("{:20} - {} lines", self.filename, self.rows.len()), 
-        format!("{}/{}", self.cursor.y, self.rows.len()))
+        format!("{}/{}", self.cursor.y, self.rows.len()),
+        &self.status_msg)
     }
 
     pub fn die<S : Into<String>>(&mut self, message : S){
@@ -249,6 +260,11 @@ impl Editor {
         if self.render_x >= self.coloff + bounds.x {
             self.coloff = self.render_x - bounds.x + 1;
         }
+    }
+
+    fn set_status_message<T:Into<String>>(&mut self, message: T){
+        self.status_time = Instant::now();
+        self.status_msg = message.into();
     }
 
 

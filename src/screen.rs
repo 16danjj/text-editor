@@ -1,4 +1,4 @@
-use std::{env, io::{self, stdout, Stdout, Write}};
+use std::{env, fmt::Display, io::{self, stdout, Stdout, Write}};
 use crossterm::{cursor::{self, position, MoveTo}, style::{self, Color::{Black, White}, Colors, Print, ResetColor, SetColors}, terminal, QueueableCommand};
 
 use crate::Position;
@@ -17,7 +17,7 @@ impl Screen{
         Ok(Self{
             stdout : stdout(),
             width : columns,
-            height : rows - 1
+            height : rows - 2
         })
     }
 
@@ -113,7 +113,7 @@ impl Screen{
         }
     }
 
-    pub fn draw_status_bar<T:Into<String>>(&mut self, left: T, right: T) -> io::Result<()>{
+    pub fn draw_status_bar<T:Into<String>, U:Into<String>>(&mut self, left: T, right: U, help : impl Display) -> io::Result<()>{
         let left = left.into();
         let right = right.into();
 
@@ -141,6 +141,8 @@ impl Screen{
             .queue(cursor::MoveTo(0, self.height))?
             .queue(SetColors(Colors::new(Black, White)))?
             .queue(Print(format!("{status}{rstatus}")))?
+            .queue(cursor::MoveTo(0, self.height + 1))?
+            .queue(Print(format!("{help:0$}",  screen_width)))?
             .queue(ResetColor)?;
 
         Ok(())
