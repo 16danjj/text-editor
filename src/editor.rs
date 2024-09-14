@@ -111,12 +111,11 @@ impl Editor {
                 },
                 KeyEvent {code : KeyCode::Home, ..} => {
                     self.cursor.x  = 0;
-                    self.screen.move_to_beginning(&self.cursor)?;
                 },
                 KeyEvent {code : KeyCode::End, ..} => {
-                    let bounds = self.screen.bounds();
-                    self.cursor.x = bounds.x;
-                    self.screen.move_to_end(&self.cursor)?;
+                    if self.cursor.y < self.rows.len() as u16{
+                        self.cursor.x = self.rows[self.cursor.y as usize].len() as u16;
+                    }
                 },
                 KeyEvent {code : KeyCode::Char(key), ..} => {
                     match key {

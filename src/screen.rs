@@ -163,15 +163,4 @@ impl Screen{
         }
     }
 
-    pub fn move_to_beginning(&mut self, pos: &Position) -> io::Result<()> {
-        self.stdout.queue(cursor::MoveTo(pos.x, pos.y))?;
-
-        Ok(())
-    }
-
-    pub fn move_to_end(&mut self, pos: &Position) -> io::Result<()> {
-        self.stdout.queue(cursor::MoveTo(pos.x, pos.y))?;
-
-        Ok(())
-    }
 }
