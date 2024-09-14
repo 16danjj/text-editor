@@ -169,11 +169,10 @@ impl Editor {
         self.scroll();
         self.screen.clear()?;  
         self.screen.draw_rows(&self.rows, self.rowoff, self.coloff)?;
-        if !self.status_msg.is_empty(){
-            if self.status_time.elapsed() > Duration::from_secs(5) {
+        if !self.status_msg.is_empty() && self.status_time.elapsed() > Duration::from_secs(5) {
                 self.status_msg.clear();
-            }
         }
+        
         self.screen.draw_status_bar(format!("{:20} - {} lines", self.filename, self.rows.len()), 
         format!("{}/{}", self.cursor.y, self.rows.len()),
         &self.status_msg)
