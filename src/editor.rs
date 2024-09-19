@@ -3,7 +3,6 @@ use std::io::{self};
 use std::time::{Instant,Duration};
 use crossterm::terminal;
 use errno::errno;
-use std::collections::HashMap;
 use std::path::Path;
 use crate::keyboard::*;
 use crate::screen::*;
@@ -31,7 +30,6 @@ pub struct Editor {
     keyboard : Keyboard,
     cursor : Position,
     render_x : u16, 
-    keymap : HashMap<char, EditorKey>,
     rows : Vec<Row>,
     rowoff : u16,
     coloff : u16
@@ -56,11 +54,6 @@ impl Editor {
 
     fn build<T: Into<String>>(data: &[String], filename: T) -> io::Result<Self>
     {
-        let mut key_map = HashMap::new();
-        key_map.insert('w', EditorKey::ArrowUp);
-        key_map.insert('a', EditorKey::ArrowLeft);
-        key_map.insert('s', EditorKey::ArrowDown);
-        key_map.insert('d', EditorKey::ArrowRight);
         Ok(Self {
             filename: filename.into(),
             status_msg : String::from("HELP: Ctrl -Q = quit"),
@@ -69,7 +62,6 @@ impl Editor {
             keyboard : Keyboard {},
             cursor : Position::default(),
             render_x : 0,
-            keymap : key_map,
             rows : if data.is_empty() {
                 Vec::new()
             } else {
@@ -126,13 +118,8 @@ impl Editor {
                     }
                 },
                 KeyEvent {code : KeyCode::Char(key), ..} => {
-                    match key {
-                        'w' | 'a' | 's' | 'd' => {self.move_cursor(self.keymap.get(&key).copied().unwrap());},
-                        _ => {}
-                    }
+                    self.insert_char(key)
                 },  
-                
-
                 _ => {return Ok(false)}
             }
         }
@@ -160,9 +147,8 @@ impl Editor {
             }  
         }
     
-        terminal::disable_raw_mode()?; 
+        terminal::disable_raw_mode()
 
-        Ok(())
     }
 
     pub fn refresh_screen(&mut self) -> io::Result<()>{
@@ -266,6 +252,14 @@ impl Editor {
         self.status_msg = message.into();
     }
 
+    fn insert_char(&mut self, c: char){
+         if self.cursor.y == self.rows.len() as u16 {
+            self.rows.push(Row::new(String::new()));
+         }
+
+         self.rows[self.cursor.y as usize].insert_char(self.cursor.x as usize, c);
+         self.cursor.x += 1;   
+    }
 
 }
 
